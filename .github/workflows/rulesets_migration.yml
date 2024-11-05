@@ -1,0 +1,93 @@
+name: Migrate Repo-Level Rulesets
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  extract_migration_level:
+    runs-on: ubuntu-latest
+    outputs:
+      migration_level: ${{ steps.extract.outputs.migration_level }}
+    steps:
+      - name: Get Migration Level from Issue Body
+        id: extract
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issueBody = context.payload.issue.body;
+            const migrationLevelMatch = issueBody.match(/### Migration Level\s*\n*(.*)/);
+            const migrationLevel = migrationLevelMatch ? migrationLevelMatch[1].trim() : "Repository"; // default to Repository
+            console.log("Migration Level: ", migrationLevel);
+            core.setOutput("migration_level", migrationLevel);
+      - name: Validate PAT tokens
+        run: |
+          if [[ -z "${{ secrets.SOURCE_TOKEN }}" ]]; then
+            echo "Source Token is missing!"
+            exit 1
+          fi
+          if [[ -z "${{ secrets.TARGET_TOKEN }}" ]]; then
+          echo "Target Token is missing!"
+          exit 1
+          fi
+        shell: bash
+
+  
+  
+  #Job for repo-level migration
+  repo_level_migration:
+    runs-on: ubuntu-latest
+    needs: extract_migration_level
+    if: ${{ needs.extract_migration_level.outputs.migration_level == 'Repository' }}  # Check migration level output
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Set up GitHub CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install gh
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Install gh-migrate-rulesets extension
+        run: gh extension install MGMResorts/gh-migrate-rulesets
+        env:
+          GH_TOKEN: ${{ secrets.CLI_TOKEN }}
+
+
+      - name: Get Issue Body
+        id: issue_body
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issueBody = context.payload.issue.body;
+            const sourceOrgMatch = issueBody.match(/### Source Organization\s*\n*(.*)/);
+            const sourceRepoMatch = issueBody.match(/### Source Repository\s*\n*(.*)/);
+            const targetOrgMatch = issueBody.match(/### Target Organization\s*\n*(.*)/);
+            const targetRepoMatch = issueBody.match(/### Target Repository\s*\n*(.*)/);
+
+            const sourceOrg = sourceOrgMatch ? sourceOrgMatch[1].trim() : "Not provided";
+            const sourceRepo = sourceRepoMatch ? sourceRepoMatch[1].trim() : "Not provided";
+            const targetOrg = targetOrgMatch ? targetOrgMatch[1].trim() : "Not provided";
+            const targetRepo = targetRepoMatch ? targetRepoMatch[1].trim() : "Not provided";
+
+            core.setOutput("source_org", sourceOrg);
+            core.setOutput("source_repo", sourceRepo);
+            core.setOutput("target_org", targetOrg);
+            core.setOutput("target_repo", targetRepo);
+
+      - name: Export List of Rulesets  details from an org's Repo
+        run: |
+          gh migrate-rulesets list -o source-rulesets.csv ${{ steps.issue_body.outputs.source_org }} ${{ steps.issue_body.outputs.source_repo }} -t ${{ secrets.SOURCE_TOKEN }}
+          
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_TOKEN }}
+
+      - name: Migrating Rulesets from Source to Target Repo's
+        run: |
+          gh migrate-rulesets create -s ${{ steps.issue_body.outputs.source_org }} -R ${{ steps.issue_body.outputs.source_repo }} ${{ steps.issue_body.outputs.target_org }} -t ${{ secrets.TARGET_TOKEN }} -p ${{ secrets.SOURCE_TOKEN }}
+          
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
