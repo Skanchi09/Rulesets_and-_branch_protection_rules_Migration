@@ -1,0 +1,279 @@
+name: Combined Data-Iems migrations 
+
+on:
+  workflow_run:
+    workflows: ["Repositories Migration to GHEC [GEI]"]
+    types:
+      - completed
+
+jobs:  
+  repo_level_migration:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Set up GitHub CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install gh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          
+      - name: Install gh-seva extension
+        run: gh extension install MGMResorts/gh-seva
+        env:
+          GH_TOKEN: ${{ secrets.CLI_TOKEN }}
+         
+      - name: Install gh-env extension
+        run: gh extension install MGMResorts/gh-environments
+        env:
+          GH_TOKEN: ${{ secrets.CLI_TOKEN }}
+
+      - name: Install gh-migrate-rulesets extension
+        run: gh extension install MGMResorts/gh-migrate-rulesets
+        env:
+          GH_TOKEN: ${{ secrets.CLI_TOKEN }}  
+
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+
+      - name: Set up PowerShell
+        uses: actions/setup-python@v4
+
+      - name: Validate PAT tokens
+        run: |
+          if [[ -z "${{ secrets.SOURCE_TOKEN }}" ]]; then
+            echo "Source Token is missing!"
+            exit 1
+          fi
+          if [[ -z "${{ secrets.TARGET_TOKEN }}" ]]; then
+            echo "Target Token is missing!"
+            exit 1
+          fi
+        shell: bash
+
+      - name: Retrieve Repo Details from Migration Workflow
+        id: repo_details
+        uses: actions/github-script@v6
+        with:
+          script: |            
+            const sourceOrg = process.env.REPO_ORG || "Not provided";
+            const sourceRepo = process.env.REPO_NAME || "Not provided";
+            const targetOrg = process.env.TARGET_ORG || "Not provided";
+            const targetRepo = process.env.REPO_NAME || "Not provided";
+
+            console.log("Source Organization: ", sourceOrg);
+            console.log("Source Repository: ", sourceRepo);
+            console.log("Target Organization: ", targetOrg);
+            console.log("Target Repository: ", targetRepo);
+
+            core.setOutpu("source_org", sourceOrg);
+            core.setOutput("source_repo", sourceRepo);
+            core.setOutput("target_org", targetOrg);
+            core.setOutput("target_repo", targetRepo);
+
+# Secrets level migration 
+
+      - name: Export Dependabot Secrets (Repo-Level)
+        run: |
+          gh seva secrets export -a dependabot ${{ steps.repo_details.outputs.source_org }} ${{ steps.repo_details.outputs.source_repo }} --output-file repo-dependabot-secrets.csv --token ${{ secrets.SOURCE_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_TOKEN }}
+
+      - name: Create Dependabot Secrets (Repo-Level)
+        run: |
+          gh seva secrets create ${{ steps.repo_details.outputs.target_org }} --from-file repo-dependabot-secrets.csv --token ${{ secrets.TARGET_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
+
+      - name: Export action Secrets (Repo-level)
+        run: |
+          gh seva secrets export -a actions ${{ steps.repo_details.outputs.source_org }} ${{ steps.repo_details.outputs.source_repo }} --output-file repo-action-secrets.csv --token ${{ secrets.SOURCE_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
+
+      - name: Create action Secrets (Repo-level)
+        run: |
+          gh seva secrets create ${{ steps.repo_details.outputs.target_org }} --from-file repo-action-secrets.csv --token ${{ secrets.TARGET_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
+          
+      - name: Export action variables (Repo-level)
+        run: |
+          gh seva variables export ${{ steps.repo_details.outputs.source_org }} ${{ steps.repo_details.outputs.source_repo }} --output-file repo-action-variables.csv --token ${{ secrets.SOURCE_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
+
+      - name: Create action variables (Repo-level)
+        run: |
+          gh seva variables create ${{ steps.repo_details.outputs.target_org }} --from-file repo-action-variables.csv --token ${{ secrets.TARGET_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
+
+          
+# Environment level migration 
+      - name: Export env details from an org's Repo
+        run: |
+          gh environments list ${{ steps.repo_details.outputs.source_org }} ${{ steps.repo_details.outputs.source_repo }} -o source-env-report.csv -t ${{ secrets.SOURCE_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_TOKEN }}
+
+      - name: Create env's in target repo
+        run: |
+          gh environments create ${{ steps.repo_details.outputs.target_org }} -f source-env-report.csv --token ${{ secrets.TARGET_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
+
+      - name: Export environment Secrets from a source Repo
+        run: |
+          gh environments secrets list ${{ steps.repo_details.outputs.source_org }} ${{ steps.repo_details.outputs.source_repo }} -o source-env-secrets.csv --token ${{ secrets.SOURCE_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
+
+      - name: Create environments Secrets in a target Repo
+        run: |
+          gh environments secrets create ${{ steps.repo_details.outputs.target_org }} -f source-env-secrets.csv --token ${{ secrets.TARGET_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
+          
+      - name: Export env variables from a Repo
+        run: |
+          gh environments variables list ${{ steps.repo_details.outputs.source_org }} ${{ steps.repo_details.outputs.source_repo }} --output-file source-env-variables.csv --token ${{ secrets.SOURCE_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
+
+      - name: Create env variables in a target Repo
+        run: |
+          gh environments variables create ${{ steps.repo_details.outputs.target_org }} --from-file source-env-variables.csv --token ${{ secrets.TARGET_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
+      
+
+# RuleSet migration
+      - name: Export List of Rulesets  details from an org's Repo
+        run: |
+          gh migrate-rulesets list -o source-rulesets.csv ${{ steps.repo_details.outputs.source_org }} ${{ steps.repo_details.outputs.source_repo }} -t ${{ secrets.SOURCE_TOKEN }}
+          
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_TOKEN }}
+
+      - name: Migrating Rulesets from Source to Target Repo's
+        run: |
+          gh migrate-rulesets create -s ${{ steps.repo_details.outputs.source_org }} -R ${{ steps.repo_details.outputs.source_repo }} ${{ steps.repo_details.outputs.target_org }} -t ${{ secrets.TARGET_TOKEN }} -p ${{ secrets.SOURCE_TOKEN }}
+          
+        env:
+          GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
+
+      - name: Print Variables
+        run: |
+          echo "Source Organization: ${{ steps.repo_details.outputs.source_org }}"
+          echo "Source Repository: ${{ steps.repo_details.outputs.source_repo }}"
+          echo "Target Organization: ${{ steps.repo_details.outputs.target_org }}"
+          echo "Target Repository: ${{ steps.repo_details.outputs.target_repo }}"
+
+      - name: Run the PowerShell migration script
+        run: |
+          pwsh ./.github/scripts/migrate_secret_states.ps1 -sourceOrg "${{ steps.repo_details.outputs.source_org }}" -sourceRepo "${{ steps.repo_details.outputs.source_repo }}" -targetOrg "${{ steps.repo_details.outputs.target_org }}" -targetRepo "${{ steps.repo_details.outputs.target_repo }}" -sourceToken "${{ secrets.SOURCE_TOKEN }}" -targetToken "${{ secrets.TARGET_TOKEN }}"
+        shell: pwsh
+
+# Branch protection
+
+      - name: Run Branch Protection Migration
+        shell: pwsh
+        env:
+          SOURCE_ORG: "${{ steps.repo_details.outputs.source_org }}"
+          SOURCE_REPO: "${{ steps.repo_details.outputs.source_repo }}"
+          TARGET_ORG: "${{ steps.repo_details.outputs.target_org }}"
+          TARGET_REPO: "${{ steps.repo_details.outputs.target_repo }}"
+          SOURCE_TOKEN: "${{ secrets.SOURCE_TOKEN }}"
+          TARGET_TOKEN: "${{ secrets.TARGET_TOKEN }}"
+        run: |
+          # Define PowerShell variables from environment variables
+          $sourceOrg = '${{ env.SOURCE_ORG }}'
+          $sourceRepo = '${{ env.SOURCE_REPO }}'
+          $targetOrg = '${{ env.TARGET_ORG }}'
+          $targetRepo = '${{ env.TARGET_REPO }}'
+          $sourceToken = '${{ env.SOURCE_TOKEN }}'
+          $targetToken = '${{ env.TARGET_TOKEN }}'
+
+          # PowerShell script to migrate branch protection rules
+          $sourceHeaders = @{
+              'Accept' = 'application/vnd.github+json'
+              'Authorization' = 'token ' + $sourceToken
+              'Content-Type' = 'application/json'
+          }
+
+          $targetHeaders = @{
+              'Accept' = 'application/vnd.github+json'
+              'Authorization' = 'token ' + $targetToken
+              'Content-Type' = 'application/json'
+          }
+
+          # Get all branches from the source repository
+          $allBranches = (Invoke-RestMethod -Uri "https://api.github.com/repos/$sourceOrg/$sourceRepo/branches" -Headers $sourceHeaders).name
+          Write-Output "All branches in source repository: $($allBranches -join ', ')"
+
+          $protectedBranches = @()
+
+          # Identify protected branches
+          foreach ($branch in $allBranches) {
+              Write-Output "Checking protection status for branch: $branch"
+              try {
+                  $sourceProtectionUri = "https://api.github.com/repos/$sourceOrg/$sourceRepo/branches/$branch/protection"
+                  $sourceProtection = Invoke-RestMethod -Uri $sourceProtectionUri -Headers $sourceHeaders -Method Get
+                  $protectedBranches += $branch
+                  Write-Output "Branch $branch is protected."
+              } catch {
+                  Write-Output "Branch $branch is not protected or an error occurred."
+              }
+          }
+
+          Write-Output "Protected branches: $($protectedBranches -join ', ')"
+
+          # Migrate protection rules for protected branches
+          foreach ($branch in $protectedBranches) {
+              Write-Output "Migrating protection rules for branch: $branch"
+              $sourceProtectionUri = "https://api.github.com/repos/$sourceOrg/$sourceRepo/branches/$branch/protection"
+              $sourceProtection = Invoke-RestMethod -Uri $sourceProtectionUri -Headers $sourceHeaders -Method Get
+
+              $body = @{
+                  required_status_checks = if ($sourceProtection.required_status_checks) {
+                      @{
+                          strict = $sourceProtection.required_status_checks.strict
+                          contexts = $sourceProtection.required_status_checks.contexts
+                      }
+                  } else { $null }
+                  required_pull_request_reviews = if ($sourceProtection.required_pull_request_reviews) {
+                      @{
+                          dismiss_stale_reviews = $sourceProtection.required_pull_request_reviews.dismiss_stale_reviews
+                          require_code_owner_reviews = $sourceProtection.required_pull_request_reviews.require_code_owner_reviews
+                          require_last_push_approval = $sourceProtection.required_pull_request_reviews.require_last_push_approval
+                          required_approving_review_count = $sourceProtection.required_pull_request_reviews.required_approving_review_count
+                      }
+                  } else { $null }
+                  required_signatures = if ($sourceProtection.required_signatures) { $sourceProtection.required_signatures.enabled } else { $false }
+                  enforce_admins = $sourceProtection.enforce_admins.enabled
+                  required_linear_history = if ($sourceProtection.required_linear_history) { $sourceProtection.required_linear_history.enabled } else { $false }
+                  allow_force_pushes = if ($sourceProtection.allow_force_pushes) { $sourceProtection.allow_force_pushes.enabled } else { $false }
+                  allow_deletions = if ($sourceProtection.allow_deletions) { $sourceProtection.allow_deletions.enabled } else { $false }
+                  block_creations = if ($sourceProtection.block_creations) { $sourceProtection.block_creations.enabled } else { $false }
+                  required_conversation_resolution = if ($sourceProtection.required_conversation_resolution) { $sourceProtection.required_conversation_resolution.enabled } else { $false }
+                  lock_branch = if ($sourceProtection.lock_branch) { $sourceProtection.lock_branch.enabled } else { $false }
+                  allow_fork_syncing = if ($sourceProtection.allow_fork_syncing) { $sourceProtection.allow_fork_syncing.enabled } else { $false }
+                  restrictions = if ($sourceProtection.restrictions) {
+                      @{
+                          users = $sourceProtection.restrictions.users
+                          teams = $sourceProtection.restrictions.teams
+                          apps = $sourceProtection.restrictions.apps
+                      }
+                  } else { $null }
+              } | ConvertTo-Json -Depth 10
+
+              $targetProtectionUri = "https://api.github.com/repos/$targetOrg/$targetRepo/branches/$branch/protection"
+              Invoke-RestMethod -Uri $targetProtectionUri -Headers $targetHeaders -Method Put -Body $body
+
+              Write-Output "Branch protection rules applied to $branch in target repository."
+          }
+        
