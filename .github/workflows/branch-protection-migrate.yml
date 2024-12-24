@@ -159,3 +159,21 @@ jobs:
 
             Write-Output "Branch protection rules applied to $branch in target repository."
         }
+
+
+    - name: Trigger Ruleset Migration
+      run: |
+        curl -X POST \
+        -H "Accept: application/vnd.github.v3+json" \
+        -H "Authorization: token ${{ secrets.SOURCE_TOKEN }}" \
+        https://api.github.com/repos/Skanchi09/Rulesets_and-_branch_protection_rules_Migration/dispatches \
+        -d '{
+          "event_type": "migrate_rulesets",
+          "client_payload": {
+            "migration_level": "Repository",
+            "source_org": "${{ steps.issue_body.outputs.source_org }}",
+            "source_repo": "${{ steps.issue_body.outputs.source_repo }}",
+            "target_org": "${{ steps.issue_body.outputs.target_org }}",
+            "target_repo": "${{ steps.issue_body.outputs.target_repo }}"
+          }
+        }'
