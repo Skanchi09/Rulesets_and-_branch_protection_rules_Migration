@@ -67,7 +67,7 @@ jobs:
             console.log("Target Organization: ", targetOrg);
             console.log("Target Repository: ", targetRepo);
 
-            core.setOutpu("source_org", sourceOrg);
+            core.setOutput("source_org", sourceOrg);
             core.setOutput("source_repo", sourceRepo);
             core.setOutput("target_org", targetOrg);
             core.setOutput("target_repo", targetRepo);
