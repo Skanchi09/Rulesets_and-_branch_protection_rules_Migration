@@ -20,17 +20,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           
       - name: Install gh-seva extension
-        run: gh extension install MGMResorts/gh-seva
+        run: gh extension install katiem0/gh-seva
         env:
           GH_TOKEN: ${{ secrets.CLI_TOKEN }}
          
       - name: Install gh-env extension
-        run: gh extension install MGMResorts/gh-environments
+        run: gh extension install katiem0/gh-environments
         env:
           GH_TOKEN: ${{ secrets.CLI_TOKEN }}
 
       - name: Install gh-migrate-rulesets extension
-        run: gh extension install MGMResorts/gh-migrate-rulesets
+        run: gh extension install katiem0/gh-migrate-rulesets
         env:
           GH_TOKEN: ${{ secrets.CLI_TOKEN }}  
 
