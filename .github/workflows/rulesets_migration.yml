@@ -1,8 +1,10 @@
 name: Migrate Repo-Level Rulesets
 
 on:
-  issues:
-    types: [opened, edited]
+  workflow_run:
+    workflows: ["Migrate Repository-Level Branch protection rules"]
+    types:
+      - completed
 
 jobs:
   extract_migration_level:
