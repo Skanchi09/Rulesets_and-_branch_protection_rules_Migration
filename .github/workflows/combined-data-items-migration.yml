@@ -57,10 +57,11 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |            
-            const sourceOrg = process.env.REPO_ORG || "Not provided";
-            const sourceRepo = process.env.REPO_NAME || "Not provided";
-            const targetOrg = process.env.TARGET_ORG || "Not provided";
-            const targetRepo = process.env.REPO_NAME || "Not provided";
+            const payload = context.payload.client_payload || {};
+            const sourceOrg = payload.source_org || "Not provided";
+            const sourceRepo = payload.source_repo || "Not provided";
+            const targetOrg = payload.target_org || "Not provided";
+            const targetRepo = payload.target_repo || "Not provided";
 
             console.log("Source Organization: ", sourceOrg);
             console.log("Source Repository: ", sourceRepo);
@@ -71,7 +72,7 @@ jobs:
             core.setOutput("source_repo", sourceRepo);
             core.setOutput("target_org", targetOrg);
             core.setOutput("target_repo", targetRepo);
-
+            
 # Secrets level migration 
 
       - name: Export Dependabot Secrets (Repo-Level)
