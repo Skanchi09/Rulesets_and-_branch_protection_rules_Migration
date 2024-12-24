@@ -166,7 +166,7 @@ jobs:
         curl -X POST \
         -H "Accept: application/vnd.github.v3+json" \
         -H "Authorization: token ${{ secrets.SOURCE_TOKEN }}" \
-        https://api.github.com/repos/Skanchi09/Rulesets_and-_branch_protection_rules_Migration/dispatches \
+        https://api.github.com/repos/MGMResorts/mgm-af-migrations-via-actions/dispatches \
         -d '{
           "event_type": "combined-data-items",
           "client_payload": {
