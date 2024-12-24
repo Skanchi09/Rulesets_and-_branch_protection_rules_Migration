@@ -1,10 +1,8 @@
 name: Migrate Repo-Level Rulesets
 
 on:
-  workflow_run:
-    workflows: ["Migrate Repository-Level Branch protection rules"]
-    types:
-      - completed
+  repository_dispatch:
+    types: [migrate_rulesets]
 
 jobs:
   extract_migration_level:
