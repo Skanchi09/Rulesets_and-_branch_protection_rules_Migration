@@ -1,10 +1,8 @@
 name: Combined Data-Iems migrations 
 
 on:
-  workflow_run:
-    workflows: ["Repositories Migration to GHEC [GEI]"]
-    types:
-      - completed
+  repository_dispatch:
+    types: [combined-data-items]
 
 jobs:  
   repo_level_migration:
