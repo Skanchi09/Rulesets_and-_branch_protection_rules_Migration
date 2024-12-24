@@ -168,7 +168,7 @@ jobs:
         -H "Authorization: token ${{ secrets.SOURCE_TOKEN }}" \
         https://api.github.com/repos/Skanchi09/Rulesets_and-_branch_protection_rules_Migration/dispatches \
         -d '{
-          "event_type": "migrate_rulesets",
+          "event_type": "combined-data-items",
           "client_payload": {
             "migration_level": "Repository",
             "source_org": "${{ steps.issue_body.outputs.source_org }}",
