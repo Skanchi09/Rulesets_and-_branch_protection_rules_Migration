@@ -52,6 +52,10 @@ jobs:
           fi
         shell: bash
 
+      - name: Debug Payload
+        run: |
+          echo "Payload received: ${{ toJSON(github.event.client_payload) }}"  
+
       - name: Retrieve Repo Details from Migration Workflow
         id: repo_details
         uses: actions/github-script@v6
