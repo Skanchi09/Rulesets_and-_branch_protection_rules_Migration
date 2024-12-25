@@ -8,6 +8,12 @@ jobs:
   migrate:
     runs-on: ubuntu-latest
 
+    outputs:
+      source_org: ${{ steps.issue_body.outputs.source_org }}
+      source_repo: ${{ steps.issue_body.outputs.source_repo }}
+      target_org: ${{ steps.issue_body.outputs.target_org }}
+      target_repo: ${{ steps.issue_body.outputs.target_repo }}
+
     steps:
     - name: Checkout the repository
       uses: actions/checkout@v3
