@@ -62,10 +62,10 @@ jobs:
         with:
           script: |            
             const payload = context.payload.client_payload || {};
-            const sourceOrg = payload.source_org?.trim();
-            const sourceRepo = payload.source_repo?.trim();
-            const targetOrg = payload.target_org?.trim();
-            const targetRepo = payload.target_repo?.trim();
+            const sourceOrg = payload.source_org?.trim() || "default-source-org";
+            const sourceRepo = payload.source_repo?.trim() || "default-source-repo";
+            const targetOrg = payload.target_org?.trim() || "default-target-org";
+            const targetRepo = payload.target_repo?.trim() || "default-target-repo";
 
             if (!sourceOrg || !sourceRepo || !targetOrg || !targetRepo) {
               core.setFailed("Missing required input parameters: source_org, source_repo, target_org, or target_repo.");
@@ -80,6 +80,14 @@ jobs:
             core.setOutput("source_repo", sourceRepo);
             core.setOutput("target_org", targetOrg);
             core.setOutput("target_repo", targetRepo);
+
+      - name: Print Variables
+        run: |
+          echo "Source Organization: ${{ steps.repo_details.outputs.source_org }}"
+          echo "Source Repository: ${{ steps.repo_details.outputs.source_repo }}"
+          echo "Target Organization: ${{ steps.repo_details.outputs.target_org }}"
+          echo "Target Repository: ${{ steps.repo_details.outputs.target_repo }}"
+
             
 # Secrets level migration 
 
