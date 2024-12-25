@@ -166,11 +166,18 @@ jobs:
     needs: migrate
 
     steps:
-      - name: Trigger Ruleset Migration
-        uses: peter-evans/repository-dispatch@v1
-        with:
-          token: ${{ secrets.SOURCE_TOKEN }}
-          event-type: combined-data-items
-          client-payload: '{"migration_level": "Repository", "source_org": "${{ steps.issue_body.outputs.source_org }}", "source_repo": "${{ steps.issue_body.outputs.source_repo }}", "target_org": "${{ steps.issue_body.outputs.target_org }}", "target_repo": "${{ steps.issue_body.outputs.target_repo }}"}'
+    - name: Print Variables
+      run: |
+        echo "Source Organization: ${{ steps.issue_body.outputs.source_org }}"
+        echo "Source Repository: ${{ steps.issue_body.outputs.source_repo }}"
+        echo "Target Organization: ${{ steps.issue_body.outputs.target_org }}"
+        echo "Target Repository: ${{ steps.issue_body.outputs.target_repo }}"
+
+    - name: Trigger Ruleset Migration
+      uses: peter-evans/repository-dispatch@v1
+      with:
+       token: ${{ secrets.SOURCE_TOKEN }}
+       event-type: combined-data-items
+       client-payload: '{"migration_level": "Repository", "source_org": "${{ steps.issue_body.outputs.source_org }}", "source_repo": "${{ steps.issue_body.outputs.source_repo }}", "target_org": "${{ steps.issue_body.outputs.target_org }}", "target_repo": "${{ steps.issue_body.outputs.target_repo }}"}'
 
  
