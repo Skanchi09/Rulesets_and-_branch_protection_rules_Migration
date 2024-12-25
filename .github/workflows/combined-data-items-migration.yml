@@ -62,19 +62,21 @@ jobs:
         with:
           script: |            
             const payload = context.payload.client_payload || {};
-            const sourceOrg = payload.source_org?.trim() || "default-source-org";
-            const sourceRepo = payload.source_repo?.trim() || "default-source-repo";
-            const targetOrg = payload.target_org?.trim() || "default-target-org";
-            const targetRepo = payload.target_repo?.trim() || "default-target-repo";
+            const sourceOrg = payload.source_org?.trim();
+            const sourceRepo = payload.source_repo?.trim();
+            const targetOrg = payload.target_org?.trim();
+            const targetRepo = payload.target_repo?.trim();
 
-            if (!sourceOrg || !sourceRepo || !targetOrg || !targetRepo) {
-              core.setFailed("Missing required input parameters: source_org, source_repo, target_org, or target_repo.");
-            }
-
+            // Log payload values
             console.log("Source Organization: ", sourceOrg);
             console.log("Source Repository: ", sourceRepo);
             console.log("Target Organization: ", targetOrg);
             console.log("Target Repository: ", targetRepo);
+
+            // Fail if required inputs are missing
+            if (!sourceOrg || !sourceRepo || !targetOrg || !targetRepo) {
+              core.setFailed("Missing required input parameters: source_org, source_repo, target_org, or target_repo.");
+            }
 
             core.setOutput("source_org", sourceOrg);
             core.setOutput("source_repo", sourceRepo);
