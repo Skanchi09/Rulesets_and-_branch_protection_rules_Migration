@@ -27,7 +27,7 @@ jobs:
           echo "Source Token is missing!"
           exit 1
         fi
-        if [[ -z "${{ secrets.TARGET_TOKEN }}" ]]; then
+        if [[ -z "${{ secrets.TARGET_ADMIN_TOKEN }}" ]]; then
           echo "Target Token is missing!"
           exit 1
         fi
@@ -77,7 +77,7 @@ jobs:
         TARGET_ORG: "${{ steps.issue_body.outputs.target_org }}"
         TARGET_REPO: "${{ steps.issue_body.outputs.target_repo }}"
         SOURCE_ADMIN_TOKEN: "${{ secrets.SOURCE_ADMIN_TOKEN }}"
-        TARGET_TOKEN: "${{ secrets.TARGET_TOKEN }}"
+        TARGET_ADMIN_TOKEN: "${{ secrets.TARGET_ADMIN_TOKEN }}"
       run: |
         # Define PowerShell variables from environment variables
         $sourceOrg = '${{ env.SOURCE_ORG }}'
@@ -85,7 +85,7 @@ jobs:
         $targetOrg = '${{ env.TARGET_ORG }}'
         $targetRepo = '${{ env.TARGET_REPO }}'
         $sourceToken = '${{ env.SOURCE_ADMIN_TOKEN }}'
-        $targetToken = '${{ env.TARGET_TOKEN }}'
+        $targetToken = '${{ env.TARGET_ADMIN_TOKEN }}'
 
         # PowerShell script to migrate branch protection rules
         $sourceHeaders = @{
