@@ -105,10 +105,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pwsh -File ./.github/scripts/migrate-codeql-alerts-analysis.ps1 `
-            -sourceOrg "${{ steps.issue_body.outputs.source_org }}" `
-            -sourceRepo "${{ steps.issue_body.outputs.source_repo }}" `
-            -targetOrg "${{ steps.issue_body.outputs.target_org }}" `
-            -targetRepo "${{ steps.issue_body.outputs.target_repo }}" `
+            -sourceOrg "${{ steps.repo_details.outputs.source_org }}" `
+            -sourceRepo "${{ steps.repo_details.outputs.source_repo }}" `
+            -targetOrg "${{ steps.repo_details.outputs.target_org }}" `
+            -targetRepo "${{ steps.repo_details.outputs.target_repo }}" `
             -sourceToken "${{ secrets.SOURCE_TOKEN }}" `
            -targetToken "${{ secrets.TARGET_TOKEN }}"
         shell: pwsh
