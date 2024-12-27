@@ -23,7 +23,7 @@ jobs:
 
     - name: Validate PAT tokens
       run: |
-        if [[ -z "${{ secrets.SOURCE_TOKEN }}" ]]; then
+        if [[ -z "${{ secrets.SOURCE_ADMIN_TOKEN }}" ]]; then
           echo "Source Token is missing!"
           exit 1
         fi
@@ -76,7 +76,7 @@ jobs:
         SOURCE_REPO: "${{ steps.issue_body.outputs.source_repo }}"
         TARGET_ORG: "${{ steps.issue_body.outputs.target_org }}"
         TARGET_REPO: "${{ steps.issue_body.outputs.target_repo }}"
-        SOURCE_TOKEN: "${{ secrets.SOURCE_TOKEN }}"
+        SOURCE_ADMIN_TOKEN: "${{ secrets.SOURCE_ADMIN_TOKEN }}"
         TARGET_TOKEN: "${{ secrets.TARGET_TOKEN }}"
       run: |
         # Define PowerShell variables from environment variables
@@ -84,7 +84,7 @@ jobs:
         $sourceRepo = '${{ env.SOURCE_REPO }}'
         $targetOrg = '${{ env.TARGET_ORG }}'
         $targetRepo = '${{ env.TARGET_REPO }}'
-        $sourceToken = '${{ env.SOURCE_TOKEN }}'
+        $sourceToken = '${{ env.SOURCE_ADMIN_TOKEN }}'
         $targetToken = '${{ env.TARGET_TOKEN }}'
 
         # PowerShell script to migrate branch protection rules
@@ -187,6 +187,6 @@ jobs:
     - name: Trigger Ruleset Migration
       uses: peter-evans/repository-dispatch@v1
       with:
-       token: ${{ secrets.SOURCE_TOKEN }}
+       token: ${{ secrets.SOURCE_ADMIN_TOKEN }}
        event-type: combined-data-items
        client-payload: '{"migration_level": "Repository", "source_org": "${{ needs.migrate.outputs.source_org }}", "source_repo": "${{ needs.migrate.outputs.source_repo }}", "target_org": "${{ needs.migrate.outputs.target_org }}", "target_repo": "${{ needs.migrate.outputs.target_repo }}"}'
