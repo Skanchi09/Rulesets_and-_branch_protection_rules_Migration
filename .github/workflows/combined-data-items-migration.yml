@@ -89,7 +89,30 @@ jobs:
           echo "Source Repository: ${{ steps.repo_details.outputs.source_repo }}"
           echo "Target Organization: ${{ steps.repo_details.outputs.target_org }}"
           echo "Target Repository: ${{ steps.repo_details.outputs.target_repo }}"
+          
+# CodeQL Scanning Analysis and Alerts Migration
 
+      - name: Print Variables
+        run: |
+          echo "Source Organization: ${{ steps.issue_body.outputs.source_org }}"
+          echo "Source Repository: ${{ steps.issue_body.outputs.source_repo }}"
+          echo "Target Organization: ${{ steps.issue_body.outputs.target_org }}"
+          echo "Target Repository: ${{ steps.issue_body.outputs.target_repo }}"
+
+    # Step 5: Run the PowerShell migration script
+      - name: Run the PowerShell migration script
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pwsh -File ./.github/scripts/migrate-codeql-alerts-analysis.ps1 `
+            -sourceOrg "${{ steps.issue_body.outputs.source_org }}" `
+            -sourceRepo "${{ steps.issue_body.outputs.source_repo }}" `
+            -targetOrg "${{ steps.issue_body.outputs.target_org }}" `
+            -targetRepo "${{ steps.issue_body.outputs.target_repo }}" `
+            -sourceToken "${{ secrets.SOURCE_TOKEN }}" `
+           -targetToken "${{ secrets.TARGET_TOKEN }}"
+        shell: pwsh
+      
             
 # Secrets level migration 
 
@@ -183,6 +206,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.TARGET_TOKEN }}
 
+# SecretScanning-Al-ert-Remediation-State
+
       - name: Print Variables
         run: |
           echo "Source Organization: ${{ steps.repo_details.outputs.source_org }}"
@@ -190,7 +215,7 @@ jobs:
           echo "Target Organization: ${{ steps.repo_details.outputs.target_org }}"
           echo "Target Repository: ${{ steps.repo_details.outputs.target_repo }}"
 
-      - name: Run the PowerShell migration script
+      - name: Sceret-Scanning Result Remediation State migration
         run: |
           pwsh ./.github/scripts/migrate_secret_states.ps1 -sourceOrg "${{ steps.repo_details.outputs.source_org }}" -sourceRepo "${{ steps.repo_details.outputs.source_repo }}" -targetOrg "${{ steps.repo_details.outputs.target_org }}" -targetRepo "${{ steps.repo_details.outputs.target_repo }}" -sourceToken "${{ secrets.SOURCE_TOKEN }}" -targetToken "${{ secrets.TARGET_TOKEN }}"
         shell: pwsh
@@ -294,3 +319,26 @@ jobs:
               Write-Output "Branch protection rules applied to $branch in target repository."
           }
         
+# CodeQL Scanning Analysis and Alerts Migration
+
+      - name: Print Variables
+        run: |
+          echo "Source Organization: ${{ steps.issue_body.outputs.source_org }}"
+          echo "Source Repository: ${{ steps.issue_body.outputs.source_repo }}"
+          echo "Target Organization: ${{ steps.issue_body.outputs.target_org }}"
+          echo "Target Repository: ${{ steps.issue_body.outputs.target_repo }}"
+
+    # Step 5: Run the PowerShell migration script
+      - name: Run the PowerShell migration script
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pwsh -File ./.github/scripts/migrate-codeql-alerts-analysis.ps1 `
+            -sourceOrg "${{ steps.issue_body.outputs.source_org }}" `
+            -sourceRepo "${{ steps.issue_body.outputs.source_repo }}" `
+            -targetOrg "${{ steps.issue_body.outputs.target_org }}" `
+            -targetRepo "${{ steps.issue_body.outputs.target_repo }}" `
+            -sourceToken "${{ secrets.SOURCE_TOKEN }}" `
+           -targetToken "${{ secrets.TARGET_TOKEN }}"
+        shell: pwsh
+      
